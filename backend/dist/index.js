@@ -13,40 +13,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const sequelize_1 = require("sequelize");
-const user_1 = __importDefault(require("./models/user"));
-dotenv_1.default.config();
+const body_parser_1 = __importDefault(require("body-parser"));
+const passport_1 = __importDefault(require("./config/passport"));
+const database_config_1 = __importDefault(require("./config/database.config"));
+const UserRoutes_1 = __importDefault(require("./routes/UserRoutes"));
+const CompanyRoutes_1 = __importDefault(require("./routes/CompanyRoutes"));
 const PORT = process.env.PORT || 3000;
-const DB_NAME = process.env.DB_NAME || ''; // Providing default empty string
-const DB_USER = process.env.DB_USER || ''; // Providing default empty string
-const DB_PWD = process.env.DB_PWD || ''; // Providing default empty string
 const app = (0, express_1.default)();
-// Check if environment variables are defined
-if (!DB_NAME || !DB_USER || !DB_PWD) {
-    console.error("Database configuration is incomplete. Please check your environment variables.");
-    process.exit(1); // Exit the application
-}
-const sequelize = new sequelize_1.Sequelize(DB_NAME, DB_USER, DB_PWD, {
-    host: 'localhost',
-    dialect: 'mysql'
-});
+app.use(express_1.default.json());
+app.use(body_parser_1.default.json());
+app.use(passport_1.default.initialize());
+// Parse URL-encoded bodies
+app.use(body_parser_1.default.urlencoded({ extended: true }));
+app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.json('Welcome to AkauntCalc!');
+}));
+app.use('/api/v1/user', UserRoutes_1.default);
+app.use('/api/v1/company', CompanyRoutes_1.default);
 // Sync models with database
-sequelize.sync({ alter: true })
+database_config_1.default.sync({ alter: true })
     .then(() => {
     console.log('Database synchronized successfully.');
 })
     .catch(err => {
     console.error('Error synchronizing database:', err);
 });
-app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send('Welcome to AkauntCalc!');
-    const newUser = yield user_1.default.create({
-        email: 'kamau',
-        password: 'ddd'
-    });
-}));
 app.listen(PORT, () => {
     console.log(`The application is listening on port ${PORT}`);
 });
-exports.default = sequelize;

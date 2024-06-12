@@ -14,62 +14,52 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const database_config_1 = __importDefault(require("../config/database.config"));
-const bcrypt_1 = __importDefault(require("bcrypt"));
-class User extends sequelize_1.Model {
-    comparePassword(plainTextPassword) {
+const user_1 = __importDefault(require("./user"));
+const company_1 = __importDefault(require("./company"));
+class UserCompany extends sequelize_1.Model {
+    static getUserRoleInCompany(companyId, userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield bcrypt_1.default.compare(plainTextPassword, this.password);
-        });
-    }
-    static findByEmail(email) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.findOne({ where: { email } });
+            const userCompanyAssociation = yield this.findOne({ where: { userId, companyId } });
+            if (!userCompanyAssociation) {
+                return false;
+            }
+            return userCompanyAssociation.role;
         });
     }
 }
-User.init({
+UserCompany.init({
     id: {
         type: sequelize_1.DataTypes.UUID,
         primaryKey: true,
         defaultValue: sequelize_1.DataTypes.UUIDV4,
         allowNull: false,
     },
-    firstName: {
-        type: sequelize_1.DataTypes.STRING,
-    },
-    lastName: {
-        type: sequelize_1.DataTypes.STRING,
-    },
-    email: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-    },
-    phoneNumber: {
-        type: sequelize_1.DataTypes.STRING,
-        unique: true,
-    },
-    isVerified: {
-        type: sequelize_1.DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
-    password: {
-        type: sequelize_1.DataTypes.STRING,
+    userId: {
+        type: sequelize_1.DataTypes.UUID,
+        references: {
+            model: user_1.default,
+            key: 'id',
+        },
         allowNull: false,
     },
+    companyId: {
+        type: sequelize_1.DataTypes.UUID,
+        references: {
+            model: company_1.default,
+            key: 'id',
+        },
+        allowNull: false,
+    },
+    role: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    }
 }, {
     sequelize: database_config_1.default,
-    modelName: 'User',
-    tableName: 'users',
+    modelName: 'UserCompany',
+    tableName: 'user_company',
     timestamps: true,
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
-    hooks: {
-        beforeCreate: (user) => __awaiter(void 0, void 0, void 0, function* () {
-            const salt = yield bcrypt_1.default.genSalt(10);
-            const hashedPassword = yield bcrypt_1.default.hash(user.password, salt);
-            user.password = hashedPassword;
-        })
-    }
 });
-exports.default = User;
+exports.default = UserCompany;
